@@ -1,23 +1,42 @@
 """
 db.py — Supabase database operations.
 """
-import json
 
+# ── Subjects ─────────────────────────────────────────────────────────────────
 
-def save_lecture(supabase, user_id: str, title: str, source_type: str, source_ref: str, raw_transcript: str) -> str:
-    """Insert a lecture record and return its ID."""
-    result = supabase.table("lectures").insert({
+def get_user_subjects(supabase, user_id: str) -> list:
+    result = supabase.table("subjects") \
+        .select("*") \
+        .eq("user_id", user_id) \
+        .order("name") \
+        .execute()
+    return result.data or []
+
+def create_subject(supabase, user_id: str, name: str, colour: str = "#6c63ff") -> str:
+    result = supabase.table("subjects").insert({
         "user_id": user_id,
-        "title": title,
-        "source_type": source_type,
-        "source_ref": source_ref,
-        "raw_transcript": raw_transcript[:50_000],  # cap at 50k chars
+        "name": name,
+        "colour": colour,
     }).execute()
     return result.data[0]["id"]
 
+def delete_subject(supabase, subject_id: str):
+    supabase.table("subjects").delete().eq("id", subject_id).execute()
+
+# ── Lectures ──────────────────────────────────────────────────────────────────
+
+def save_lecture(supabase, user_id: str, title: str, source_type: str, source_ref: str, raw_transcript: str, subject_id: str = None) -> str:
+    result = supabase.table("lectures").insert({
+        "user_id": user_id,
+        "subject_id": subject_id,
+        "title": title,
+        "source_type": source_type,
+        "source_ref": source_ref,
+        "raw_transcript": raw_transcript[:50_000],
+    }).execute()
+    return result.data[0]["id"]
 
 def save_materials(supabase, lecture_id: str, user_id: str, materials: dict):
-    """Insert generated study materials linked to a lecture."""
     supabase.table("study_materials").insert({
         "lecture_id": lecture_id,
         "user_id": user_id,
@@ -29,29 +48,22 @@ def save_materials(supabase, lecture_id: str, user_id: str, materials: dict):
         "exam_topics": materials.get("exam_topics", ""),
     }).execute()
 
-
-def get_user_lectures(supabase, user_id: str) -> list:
-    """Fetch all lectures for a user, newest first."""
-    result = supabase.table("lectures") \
-        .select("id, title, source_type, source_ref, created_at") \
-        .eq("user_id", user_id) \
-        .order("created_at", desc=True) \
-        .execute()
+def get_user_lectures(supabase, user_id: str, subject_id: str = None) -> list:
+    q = supabase.table("lectures") \
+        .select("id, title, source_type, source_ref, subject_id, created_at") \
+        .eq("user_id", user_id)
+    if subject_id:
+        q = q.eq("subject_id", subject_id)
+    result = q.order("created_at", desc=True).execute()
     return result.data or []
 
-
-def get_lecture_materials(supabase, lecture_id: str) -> dict | None:
-    """Fetch study materials for a specific lecture."""
+def get_lecture_materials(supabase, lecture_id: str) -> dict:
     result = supabase.table("study_materials") \
         .select("*") \
         .eq("lecture_id", lecture_id) \
         .limit(1) \
         .execute()
-    if result.data:
-        return result.data[0]
-    return None
-
+    return result.data[0] if result.data else None
 
 def delete_lecture(supabase, lecture_id: str):
-    """Delete a lecture (cascade deletes materials too via FK)."""
     supabase.table("lectures").delete().eq("id", lecture_id).execute()
