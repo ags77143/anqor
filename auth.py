@@ -52,8 +52,8 @@ def show_auth_page(supabase: Client):
     <div class="auth-wrap">
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="sf-logo" style="text-align:center;">StudyForge</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sf-tagline" style="text-align:center;margin-bottom:2rem;">Turn any lecture into study materials — free, forever</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sf-logo" style="text-align:center;">Anqorr</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sf-tagline" style="text-align:center;margin-bottom:2rem;">Your lectures. Your notes. Always saved.</div>', unsafe_allow_html=True)
 
     tab_login, tab_signup = st.tabs(["Sign In", "Create Account"])
 
