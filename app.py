@@ -8,10 +8,10 @@ load_dotenv()
 
 # ── Page config (must be first) ──────────────────────────────────────────────
 st.set_page_config(
-    page_title="StudyForge",
+    page_title="Anqorr",
     page_icon="⚡",
     layout="wide",
-    initial_sidebar_state="auto",
+    initial_sidebar_state="expanded",
 )
 
 # ── Inject custom CSS ─────────────────────────────────────────────────────────
@@ -335,21 +335,40 @@ if not user:
     show_auth_page(supabase)
     st.stop()
 
-# ── Sidebar ──────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown('<div class="sf-logo">StudyForge</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sf-tagline">AI Study Materials</div>', unsafe_allow_html=True)
+# ── Top nav bar (no sidebar needed) ─────────────────────────────────────────
+st.markdown('''
+<div style="display:flex;align-items:center;justify-content:space-between;
+            padding:0.7rem 1.2rem;background:#0f0f1a;border:1px solid #1e1e30;
+            border-radius:10px;margin-bottom:1.5rem;">
+    <span style="font-family:Syne,sans-serif;font-weight:800;font-size:1.3rem;
+                 background:linear-gradient(135deg,#c8f542,#42f5a7);
+                 -webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        ⚡ StudyForge
+    </span>
+</div>''', unsafe_allow_html=True)
 
-    st.markdown('<div class="sf-section">Navigation</div>', unsafe_allow_html=True)
-    page = st.radio("", ["⚡ New Lecture", "📚 My Library"], label_visibility="collapsed")
+if "page" not in st.session_state:
+    st.session_state["page"] = "new"
 
-    st.markdown("---")
-    st.markdown(f'<div style="font-size:0.75rem;color:#555570;">Signed in as<br/><span style="color:#a0a0c0;">{user.email}</span></div>', unsafe_allow_html=True)
-    if st.button("Sign Out", key="signout"):
+col_n, col_l, col_s = st.columns([2, 2, 1])
+with col_n:
+    if st.button("⚡ New Lecture", key="nav_new", use_container_width=True):
+        st.session_state["page"] = "new"
+        st.rerun()
+with col_l:
+    if st.button("📚 My Library", key="nav_lib", use_container_width=True):
+        st.session_state["page"] = "lib"
+        st.rerun()
+with col_s:
+    if st.button("Sign Out", key="signout", use_container_width=True):
         supabase.auth.sign_out()
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
+
+st.markdown(f'<div style="font-size:0.72rem;color:#555570;margin-bottom:1rem;">signed in as {user.email}</div>', unsafe_allow_html=True)
+
+page = "⚡ New Lecture" if st.session_state["page"] == "new" else "📚 My Library"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PAGE: NEW LECTURE
