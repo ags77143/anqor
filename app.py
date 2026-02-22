@@ -17,33 +17,69 @@ st.markdown("""
 html, body, .stApp { background-color: #f5f0e8 !important; color: #2c2416 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; }
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding-top: 1.5rem !important; max-width: 1000px !important; }
-section[data-testid="stSidebar"] { background: #ede8df !important; border-right: 1px solid #d9d2c4 !important; }
-section[data-testid="stSidebar"] .stMarkdown p { color: #5a4f3c !important; font-size: 0.83rem !important; }
-section[data-testid="stSidebar"] .stButton > button { background: transparent !important; color: #2c2416 !important; border: 1px solid #c8bfae !important; font-weight: 500 !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 0.85rem !important; padding: 0.5rem 0.9rem !important; }
-section[data-testid="stSidebar"] .stButton > button:hover { background: #d9d2c4 !important; transform: none !important; box-shadow: none !important; }
-.aq-logo { font-family: 'Lora', serif; font-weight: 600; font-size: 1.7rem; color: #2c2416; letter-spacing: -0.02em; margin-bottom: 0.1rem; }
+
+/* Sidebar */
+section[data-testid="stSidebar"] { background: #ede8df !important; border-right: 1px solid #d9d2c4 !important; min-width: 220px !important; }
+section[data-testid="stSidebar"] * { color: #2c2416 !important; }
+section[data-testid="stSidebar"] .stButton > button {
+    background: transparent !important; color: #2c2416 !important;
+    border: none !important; font-weight: 500 !important;
+    text-transform: none !important; letter-spacing: 0 !important;
+    font-size: 0.88rem !important; text-align: left !important;
+    padding: 0.45rem 0.8rem !important; border-radius: 6px !important;
+}
+section[data-testid="stSidebar"] .stButton > button:hover {
+    background: #d9d2c4 !important; transform: none !important; box-shadow: none !important;
+}
+
+/* Logo */
+.aq-logo { font-family: 'Lora', serif; font-weight: 600; font-size: 2rem; color: #2c2416; letter-spacing: -0.02em; }
 .aq-logo span { color: #c17b2e; }
-.aq-tagline { font-size: 0.72rem; color: #8c7d65; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1.5rem; }
-.aq-section { font-weight: 700; font-size: 0.72rem; color: #8c7d65; letter-spacing: 0.12em; text-transform: uppercase; margin: 1.4rem 0 0.6rem 0; padding-bottom: 0.3rem; border-bottom: 1px solid #d9d2c4; }
-.stButton > button { background: #2c2416 !important; color: #f5f0e8 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; font-weight: 600 !important; font-size: 0.85rem !important; letter-spacing: 0.02em !important; text-transform: none !important; border: none !important; border-radius: 8px !important; padding: 0.55rem 1.4rem !important; transition: all 0.15s ease !important; }
+
+/* Section label */
+.aq-section { font-weight: 700; font-size: 0.68rem; color: #8c7d65; letter-spacing: 0.12em;
+    text-transform: uppercase; margin: 1.2rem 0 0.4rem 0; padding-bottom: 0.3rem; border-bottom: 1px solid #d9d2c4; }
+
+/* Main buttons */
+.stButton > button { background: #2c2416 !important; color: #f5f0e8 !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important; font-weight: 600 !important;
+    font-size: 0.85rem !important; text-transform: none !important; letter-spacing: 0.01em !important;
+    border: none !important; border-radius: 8px !important; padding: 0.55rem 1.4rem !important; transition: all 0.15s !important; }
 .stButton > button:hover { background: #3d3320 !important; transform: translateY(-1px) !important; box-shadow: 0 3px 12px rgba(44,36,22,0.2) !important; }
-.stButton > button:disabled { background: #d9d2c4 !important; color: #8c7d65 !important; }
-.stTextInput input, .stTextArea textarea { background: #faf7f2 !important; border: 1.5px solid #d9d2c4 !important; border-radius: 8px !important; color: #2c2416 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 0.88rem !important; }
+.stButton > button:disabled { background: #d9d2c4 !important; color: #8c7d65 !important; transform: none !important; box-shadow: none !important; }
+
+/* Inputs */
+.stTextInput input, .stTextArea textarea { background: #faf7f2 !important; border: 1.5px solid #d9d2c4 !important;
+    border-radius: 8px !important; color: #2c2416 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 0.88rem !important; }
 .stTextInput input:focus, .stTextArea textarea:focus { border-color: #c17b2e !important; box-shadow: 0 0 0 3px rgba(193,123,46,0.1) !important; }
 [data-testid="stFileUploader"] { background: #faf7f2 !important; border: 1.5px dashed #d9d2c4 !important; border-radius: 8px !important; }
+
+/* Selectbox */
+div[data-baseweb="select"] > div { background: #faf7f2 !important; border-color: #d9d2c4 !important; border-radius: 8px !important; }
+div[data-baseweb="select"] * { color: #2c2416 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; }
+
+/* Tabs */
 .stTabs [data-baseweb="tab-list"] { background: transparent !important; border-bottom: 1.5px solid #d9d2c4 !important; gap: 0 !important; }
-.stTabs [data-baseweb="tab"] { background: transparent !important; color: #8c7d65 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; font-weight: 600 !important; font-size: 0.8rem !important; border: none !important; padding: 0.65rem 1.1rem !important; }
+.stTabs [data-baseweb="tab"] { background: transparent !important; color: #8c7d65 !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important; font-weight: 600 !important;
+    font-size: 0.8rem !important; border: none !important; padding: 0.65rem 1.1rem !important; }
 .stTabs [aria-selected="true"] { color: #2c2416 !important; border-bottom: 2px solid #c17b2e !important; }
+
+/* Cards */
 .aq-card { background: #faf7f2; border: 1px solid #e0d9cc; border-radius: 10px; padding: 1.1rem 1.3rem; margin-bottom: 0.75rem; }
 .aq-card-accent { border-left: 3px solid #c17b2e; }
 .aq-term { font-weight: 700; color: #c17b2e; font-size: 0.92rem; }
 .aq-def { color: #5a4f3c; font-size: 0.83rem; margin-top: 0.2rem; line-height: 1.6; }
 .aq-q-num { font-size: 0.68rem; color: #8c7d65; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.3rem; }
 .aq-question { font-weight: 700; font-size: 0.92rem; color: #2c2416; margin-bottom: 0.75rem; }
-.aq-option { display: flex; align-items: center; gap: 0.7rem; padding: 0.5rem 0.85rem; background: #f5f0e8; border: 1px solid #d9d2c4; border-radius: 6px; margin-bottom: 0.35rem; font-size: 0.83rem; color: #3d3320; }
+.aq-option { display: flex; align-items: center; gap: 0.7rem; padding: 0.5rem 0.85rem;
+    background: #f5f0e8; border: 1px solid #d9d2c4; border-radius: 6px; margin-bottom: 0.35rem; font-size: 0.83rem; color: #3d3320; }
 .aq-option-label { font-weight: 700; color: #8c7d65; font-size: 0.72rem; min-width: 1rem; }
-.aq-answer-box { background: #fdf3e3; border: 1px solid #e8c98a; border-radius: 6px; padding: 0.65rem 1rem; margin-top: 0.5rem; font-size: 0.82rem; color: #8a5c0a; }
-.aq-flashcard { background: #faf7f2; border: 1.5px solid #d9d2c4; border-radius: 12px; padding: 2rem 1.5rem; text-align: center; min-height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.8rem; }
+.aq-answer-box { background: #fdf3e3; border: 1px solid #e8c98a; border-radius: 6px;
+    padding: 0.65rem 1rem; margin-top: 0.5rem; font-size: 0.82rem; color: #8a5c0a; }
+.aq-flashcard { background: #faf7f2; border: 1.5px solid #d9d2c4; border-radius: 12px;
+    padding: 2rem 1.5rem; text-align: center; min-height: 160px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.8rem; }
 .aq-flashcard-label { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: #8c7d65; margin-bottom: 0.7rem; }
 .aq-flashcard-text { font-family: 'Lora', serif; font-size: 1.1rem; color: #2c2416; line-height: 1.5; }
 .aq-info { background: #eef4fb; border: 1px solid #bdd4ee; border-radius: 6px; padding: 0.65rem 1rem; font-size: 0.82rem; color: #2a5f9e; margin-bottom: 1rem; }
@@ -52,8 +88,6 @@ section[data-testid="stSidebar"] .stButton > button:hover { background: #d9d2c4 
 .aq-bullet { color: #c17b2e; flex-shrink: 0; }
 .stProgress > div > div { background: #c17b2e !important; }
 .stRadio label { font-size: 0.85rem !important; color: #3d3320 !important; }
-div[data-baseweb="select"] { background: #faf7f2 !important; }
-div[data-baseweb="select"] * { background: #faf7f2 !important; color: #2c2416 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; }
 .stMarkdown p, .stMarkdown li { font-size: 0.88rem !important; line-height: 1.75 !important; color: #3d3320 !important; }
 .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 { font-family: 'Lora', serif !important; color: #2c2416 !important; }
 .aq-page-title { font-family: 'Lora', serif; font-size: 1.6rem; font-weight: 600; color: #2c2416; margin-bottom: 0.2rem; }
@@ -74,8 +108,7 @@ if not user:
     show_auth_page(supabase)
     st.stop()
 
-for k, v in [("page", "new"), ("selected_subject", None), ("lib_selected", None),
-             ("lib_quiz_revealed", {}), ("lib_fc_index", 0), ("lib_fc_flipped", False)]:
+for k, v in [("page", "new"), ("selected_subject", None), ("lib_selected", None)]:
     if k not in st.session_state:
         st.session_state[k] = v
 
@@ -148,58 +181,51 @@ def show_materials(materials, prefix):
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown('<div class="aq-logo">an<span>q</span>orr</div>', unsafe_allow_html=True)
-    st.markdown('<div class="aq-tagline">Study smarter</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:0.72rem;color:#8c7d65;margin-bottom:1.5rem;">AI study materials</div>', unsafe_allow_html=True)
 
     if st.button("⚡  New Lecture", key="nav_new", use_container_width=True):
         st.session_state["page"] = "new"
         st.rerun()
+
     st.markdown("")
-    if st.button("📚  All Lectures", key="nav_lib", use_container_width=True):
+
+    if st.button("📚  My Library", key="nav_lib", use_container_width=True):
         st.session_state["page"] = "lib"
         st.session_state["selected_subject"] = None
         st.session_state["lib_selected"] = None
         st.rerun()
 
-    st.markdown('<div class="aq-section">Subjects</div>', unsafe_allow_html=True)
+    # Subjects
     subjects = get_user_subjects(supabase, user.id)
-    COLOURS = ["#c17b2e","#2e7bc1","#2ec17b","#c12e7b","#7b2ec1","#c1c12e"]
+    if subjects:
+        st.markdown('<div class="aq-section">Subjects</div>', unsafe_allow_html=True)
+        for subj in subjects:
+            active = st.session_state["selected_subject"] == subj["id"]
+            c1, c2 = st.columns([5, 1])
+            with c1:
+                if st.button(f"{'▸ ' if active else '  '}{subj['name']}", key=f"subj_{subj['id']}", use_container_width=True):
+                    st.session_state["selected_subject"] = subj["id"]
+                    st.session_state["page"] = "lib"
+                    st.session_state["lib_selected"] = None
+                    st.rerun()
+            with c2:
+                if st.button("✕", key=f"ds_{subj['id']}"):
+                    delete_subject(supabase, subj["id"])
+                    if st.session_state["selected_subject"] == subj["id"]:
+                        st.session_state["selected_subject"] = None
+                    st.rerun()
 
-    for subj in subjects:
-        col1, col2 = st.columns([4, 1])
-        active = st.session_state["selected_subject"] == subj["id"]
-        with col1:
-            label = f"{'▸ ' if active else ''}{subj['name']}"
-            if st.button(label, key=f"subj_{subj['id']}", use_container_width=True):
-                st.session_state["selected_subject"] = subj["id"]
-                st.session_state["page"] = "lib"
-                st.session_state["lib_selected"] = None
-                st.rerun()
-        with col2:
-            if st.button("✕", key=f"delsubj_{subj['id']}"):
-                delete_subject(supabase, subj["id"])
-                if st.session_state["selected_subject"] == subj["id"]:
-                    st.session_state["selected_subject"] = None
-                st.rerun()
-
-    new_subj = st.text_input("", placeholder="+ New subject", key="new_subj_input", label_visibility="collapsed")
-    if new_subj and st.button("Add", key="add_subj", use_container_width=True):
-        idx = len(subjects) % len(COLOURS)
-        create_subject(supabase, user.id, new_subj.strip(), COLOURS[idx])
-        st.rerun()
-
-    st.markdown('<div class="aq-section">Recent Lectures</div>', unsafe_allow_html=True)
-    all_lectures = get_user_lectures(supabase, user.id)
-    if not all_lectures:
-        st.markdown('<div style="font-size:0.78rem;color:#8c7d65;padding:0.3rem 0;">No lectures yet</div>', unsafe_allow_html=True)
-    else:
-        for lec in all_lectures[:15]:
-            src = lec.get("source_type", "")
-            icon = {"youtube": "🎬", "pdf": "📄", "pptx": "📊", "txt": "📝", "transcript": "📋"}.get(src, "📁")
-            if st.button(f"{icon} {lec['title']}", key=f"sidebar_lec_{lec['id']}", use_container_width=True):
+    st.markdown('<div class="aq-section">Recent</div>', unsafe_allow_html=True)
+    recent = get_user_lectures(supabase, user.id)[:8]
+    if recent:
+        for lec in recent:
+            icon = {"youtube":"🎬","pdf":"📄","pptx":"📊","txt":"📝","transcript":"📋"}.get(lec.get("source_type",""), "📁")
+            if st.button(f"{icon}  {lec['title']}", key=f"sl_{lec['id']}", use_container_width=True):
                 st.session_state["page"] = "lib"
                 st.session_state["lib_selected"] = lec["id"]
-                st.session_state["selected_subject"] = lec.get("subject_id")
                 st.rerun()
+    else:
+        st.markdown('<div style="font-size:0.78rem;color:#8c7d65;">No lectures yet</div>', unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown(f'<div style="font-size:0.72rem;color:#8c7d65;">{user.email}</div>', unsafe_allow_html=True)
@@ -209,28 +235,22 @@ with st.sidebar:
 # ═══════════════════════════════════════════════════════════════════════════════
 if st.session_state["page"] == "new":
     st.markdown('<div class="aq-page-title">New Lecture</div>', unsafe_allow_html=True)
-    st.markdown('<div class="aq-page-sub">Upload a lecture and get full study materials in seconds</div>', unsafe_allow_html=True)
+    st.markdown('<div class="aq-page-sub">Upload a lecture and get full study materials instantly</div>', unsafe_allow_html=True)
 
-    subjects = get_user_subjects(supabase, user.id)
-    subj_options = {s["name"]: s["id"] for s in subjects}
-    subj_names = ["No subject"] + list(subj_options.keys())
-    chosen_subj_name = st.selectbox("Subject folder", subj_names)
-    chosen_subj_id = subj_options.get(chosen_subj_name) if chosen_subj_name != "No subject" else None
-
-    st.markdown('<div class="aq-section">Input Source</div>', unsafe_allow_html=True)
+    # 1. Source type
+    st.markdown('<div class="aq-section">1. Type of lecture</div>', unsafe_allow_html=True)
     source_type = st.radio("", ["🎬 YouTube URL", "📄 Paste Transcript", "📁 Upload File (PDF / PPTX / TXT)"], label_visibility="collapsed")
 
     raw_text = None
     source_ref = ""
-    title_input = st.text_input("Lecture title (optional)", placeholder="e.g. Week 4 — Cell Biology")
 
     if "🎬" in source_type:
         yt_url = st.text_input("YouTube URL", placeholder="https://www.youtube.com/watch?v=...")
-        st.markdown('<div class="aq-info">ℹ️ Auto-captions are grabbed automatically. If none exist, paste the transcript instead.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="aq-info">ℹ️ Auto-captions grabbed automatically. If none exist, paste the transcript instead.</div>', unsafe_allow_html=True)
         if yt_url:
             source_ref = yt_url
     elif "📄" in source_type:
-        pasted = st.text_area("Paste transcript", height=240, placeholder="Paste lecture transcript, notes, or any text...")
+        pasted = st.text_area("Paste transcript", height=220, placeholder="Paste lecture transcript, notes, or any text...")
         if pasted:
             raw_text = pasted
             source_ref = "pasted_transcript"
@@ -239,10 +259,29 @@ if st.session_state["page"] == "new":
         if uploaded:
             source_ref = uploaded.name
 
+    # 2. Lecture name
+    st.markdown('<div class="aq-section">2. Lecture name</div>', unsafe_allow_html=True)
+    title_input = st.text_input("", placeholder="e.g. Week 4 — Cell Biology", label_visibility="collapsed")
+
+    # 3. Subject
+    st.markdown('<div class="aq-section">3. Subject folder (optional)</div>', unsafe_allow_html=True)
+    subjects = get_user_subjects(supabase, user.id)
+    subj_options = {s["name"]: s["id"] for s in subjects}
+    subj_names = ["No subject"] + list(subj_options.keys())
+    chosen_subj_name = st.selectbox("", subj_names, label_visibility="collapsed")
+    chosen_subj_id = subj_options.get(chosen_subj_name) if chosen_subj_name != "No subject" else None
+
+    new_subj_name = st.text_input("", placeholder="Or type a new subject name to create one", key="new_subj_inline", label_visibility="collapsed")
+
     st.markdown("")
     gen_clicked = st.button("⚡ Generate Study Materials", disabled=(not source_ref and not raw_text))
 
     if gen_clicked:
+        # Create new subject if typed
+        if new_subj_name.strip():
+            COLOURS = ["#c17b2e","#2e7bc1","#2ec17b","#c12e7b","#7b2ec1","#c1c12e"]
+            chosen_subj_id = create_subject(supabase, user.id, new_subj_name.strip(), COLOURS[len(subjects) % len(COLOURS)])
+
         progress = st.progress(0, text="Extracting text...")
         try:
             if raw_text:
@@ -276,15 +315,15 @@ if st.session_state["page"] == "new":
         lecture_id = save_lecture(supabase, user.id, final_title, src_type_clean, source_ref, text, chosen_subj_id)
         save_materials(supabase, lecture_id, user.id, materials)
         progress.progress(100, text="Done!")
+
         st.session_state["current_lecture_id"] = lecture_id
         st.session_state["current_materials"] = materials
         st.session_state["current_title"] = final_title
+        st.rerun()
 
     if "current_materials" in st.session_state:
-        materials = st.session_state["current_materials"]
-        title = st.session_state.get("current_title", "Lecture")
-        st.markdown(f'<div class="aq-section">{title}</div>', unsafe_allow_html=True)
-        show_materials(materials, prefix="new")
+        st.markdown(f'<div class="aq-page-title">{st.session_state.get("current_title","Lecture")}</div>', unsafe_allow_html=True)
+        show_materials(st.session_state["current_materials"], prefix="new")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PAGE: LIBRARY
@@ -295,32 +334,26 @@ elif st.session_state["page"] == "lib":
     subj_map = {s["id"]: s["name"] for s in subjects}
 
     if selected_subj_id:
-        subj_name = subj_map.get(selected_subj_id, "Subject")
-        st.markdown(f'<div class="aq-page-title">📁 {subj_name}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="aq-page-title">📁 {subj_map.get(selected_subj_id, "Subject")}</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="aq-page-title">📚 All Lectures</div>', unsafe_allow_html=True)
+        st.markdown('<div class="aq-page-title">📚 My Library</div>', unsafe_allow_html=True)
     st.markdown('<div class="aq-page-sub">Click a lecture to view its study materials</div>', unsafe_allow_html=True)
 
     lectures = get_user_lectures(supabase, user.id, subject_id=selected_subj_id)
 
     if not lectures:
-        st.markdown('<div class="aq-info">No lectures here yet. Go to ⚡ New Lecture to add one!</div>', unsafe_allow_html=True)
+        st.markdown('<div class="aq-info">No lectures here yet — go to ⚡ New Lecture to add one!</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="aq-section">Lectures</div>', unsafe_allow_html=True)
         for lec in lectures:
-            col1, col2 = st.columns([5, 1])
-            with col1:
-                created = lec.get("created_at", "")[:10]
-                src = lec.get("source_type", "")
-                icon = {"youtube": "🎬", "pdf": "📄", "pptx": "📊", "txt": "📝", "transcript": "📋"}.get(src, "📁")
-                subj_label = f"  ·  {subj_map.get(lec.get('subject_id'), '')}" if not selected_subj_id and lec.get("subject_id") else ""
+            c1, c2 = st.columns([5, 1])
+            with c1:
+                icon = {"youtube":"🎬","pdf":"📄","pptx":"📊","txt":"📝","transcript":"📋"}.get(lec.get("source_type",""), "📁")
+                created = lec.get("created_at","")[:10]
+                subj_label = f"  ·  {subj_map.get(lec.get('subject_id'),'')}" if not selected_subj_id and lec.get("subject_id") else ""
                 if st.button(f"{icon}  {lec['title']}  ·  {created}{subj_label}", key=f"lib_{lec['id']}", use_container_width=True):
                     st.session_state["lib_selected"] = lec["id"]
-                    st.session_state["lib_quiz_revealed"] = {}
-                    st.session_state["lib_fc_index"] = 0
-                    st.session_state["lib_fc_flipped"] = False
                     st.rerun()
-            with col2:
+            with c2:
                 if st.button("🗑", key=f"del_{lec['id']}"):
                     delete_lecture(supabase, lec["id"])
                     if st.session_state.get("lib_selected") == lec["id"]:
@@ -332,5 +365,6 @@ elif st.session_state["page"] == "lib":
             materials = get_lecture_materials(supabase, lec_id)
             lec_info = next((l for l in lectures if l["id"] == lec_id), {})
             if materials:
-                st.markdown(f'<div class="aq-section">{lec_info.get("title","")}</div>', unsafe_allow_html=True)
+                st.markdown("---")
+                st.markdown(f'<div class="aq-page-title">{lec_info.get("title","")}</div>', unsafe_allow_html=True)
                 show_materials(materials, prefix=f"lib_{lec_id}")
