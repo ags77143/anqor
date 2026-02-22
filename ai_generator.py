@@ -29,32 +29,34 @@ def generate_study_materials(text: str) -> dict:
     if len(text) > MAX_CHARS:
         text = text[:MAX_CHARS] + "\n\n[transcript truncated]"
 
-    system_prompt = """You are an expert study assistant. You MUST respond with valid JSON only.
-No markdown, no code fences, no explanation before or after. Just raw JSON starting with { and ending with }."""
+    system_prompt = """You are an elite university tutor and study materials expert. You MUST respond with valid JSON only.
+No markdown, no code fences, no explanation before or after. Just raw JSON starting with { and ending with }.
+Your study materials should be genuinely excellent — the kind that help students ace exams."""
 
-    user_prompt = f"""Create study materials from this lecture content. Return ONLY a JSON object with these exact keys:
+    user_prompt = f"""Create comprehensive, high-quality study materials from this lecture. Return ONLY a JSON object:
 
 {{
-  "title": "short lecture title",
-  "summary": "3-4 sentence summary",
-  "notes": "comprehensive markdown study notes with ## headers, minimum 400 words",
+  "title": "descriptive lecture title",
+  "summary": "5-6 sentence summary covering all main themes, key arguments, and conclusions",
+  "notes": "VERY COMPREHENSIVE markdown study notes. Use ## for main sections, ### for subsections. Must include: all key concepts explained in depth, important definitions, examples, diagrams described in text, relationships between concepts, real-world applications, common misconceptions, and anything a student needs to know for an exam. MINIMUM 800 words. Do not skip anything important.",
   "glossary": [
-    {{"term": "word", "definition": "meaning"}}
+    {{"term": "word", "definition": "thorough definition with context and why it matters"}}
   ],
   "quiz": [
-    {{"question": "question text?", "options": ["A", "B", "C", "D"], "answer": "correct option text", "explanation": "why"}}
+    {{"question": "question text?", "options": ["full option A", "full option B", "full option C", "full option D"], "answer": "exact correct option text", "explanation": "detailed explanation of why this is correct and why others are wrong"}}
   ],
   "flashcards": [
-    {{"front": "term", "back": "definition"}}
+    {{"front": "term or concept", "back": "thorough explanation, not just a one-liner"}}
   ],
   "exam_topics": "- topic one\\n- topic two\\n- topic three"
 }}
 
-Rules:
-- glossary: 8-12 terms
-- quiz: 8-10 questions with 4 options each
-- flashcards: 12-15 cards
-- exam_topics: 6-10 topics, each on new line starting with -
+Requirements — do not cut corners:
+- notes: MINIMUM 800 words, cover everything, use proper markdown headers and structure
+- glossary: 12-18 key terms with thorough definitions
+- quiz: 12-15 questions, mix of easy/medium/hard, 4 plausible options each, detailed explanations
+- flashcards: 18-25 cards covering every important concept
+- exam_topics: 10-14 high-priority topics a student should revise
 - Return ONLY the JSON, nothing else
 
 LECTURE CONTENT:
@@ -66,24 +68,20 @@ LECTURE CONTENT:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        temperature=0.1,
-        max_tokens=4096,
+        temperature=0.2,
+        max_tokens=8192,
     )
 
     raw = response.choices[0].message.content.strip()
-
-    # Strip markdown fences if present
     raw = re.sub(r'^```(?:json)?\s*', '', raw)
     raw = re.sub(r'\s*```$', '', raw)
     raw = raw.strip()
 
-    # Try direct parse
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
         pass
 
-    # Try to find JSON object within the response
     try:
         start = raw.index('{')
         end = raw.rindex('}') + 1
@@ -91,14 +89,10 @@ LECTURE CONTENT:
     except Exception:
         pass
 
-    # Last resort: fix common issues and try again
     try:
-        # Remove any text before first {
         cleaned = raw[raw.index('{'):]
-        # Remove any text after last }
         cleaned = cleaned[:cleaned.rindex('}')+1]
-        # Fix unescaped newlines inside strings
-        cleaned = re.sub(r'(?<!\\)\n(?!["\s]*[,}\]])', ' ', cleaned)
+        cleaned = re.sub(r'(?<!\\)\n(?!["\\s]*[,}\\]])', ' ', cleaned)
         return json.loads(cleaned)
     except Exception:
         raise ValueError("AI returned malformed JSON. Try re-running — it usually works on the second attempt.")
