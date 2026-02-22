@@ -124,7 +124,7 @@ from auth import show_auth_page, get_supabase_client, get_current_user
 from processor import extract_text_from_source
 from ai_generator import generate_study_materials, get_groq_client
 from db import (save_lecture, save_materials, get_user_lectures, get_lecture_materials,
-                delete_lecture, get_user_subjects, create_subject, delete_subject)
+                delete_lecture, get_user_subjects, create_subject, delete_subject, update_lecture_subject)
 
 supabase = get_supabase_client()
 user = get_current_user(supabase)
@@ -184,7 +184,7 @@ def show_materials(materials, prefix):
                 if st.button("← Prev", key=f"{prefix}_fc_prev"):
                     st.session_state[idx_key] = max(0, idx-1); st.session_state[flip_key] = False; st.rerun()
             with c2:
-                if st.button("Flip 🔄", key=f"{prefix}_fc_flip"):
+                if st.button("Flip 🔄", key=f"{prefix}_fc_flipbtn2"):
                     st.session_state[flip_key] = not flipped; st.rerun()
             with c3:
                 if st.button("Next →", key=f"{prefix}_fc_next"):
@@ -361,6 +361,14 @@ with main_col:
                         delete_lecture(supabase, lec["id"])
                         if st.session_state.get("lib_selected") == lec["id"]:
                             st.session_state["lib_selected"] = None
+                        st.rerun()
+                # Move to subject
+                if st.session_state.get("lib_selected") == lec["id"] and subjects:
+                    move_options = ["— move to subject —"] + [s["name"] for s in subjects]
+                    move_choice = st.selectbox("", move_options, key=f"move_{lec['id']}", label_visibility="collapsed")
+                    if move_choice != "— move to subject —":
+                        new_subj_id = next(s["id"] for s in subjects if s["name"] == move_choice)
+                        update_lecture_subject(supabase, lec["id"], new_subj_id)
                         st.rerun()
 
             if st.session_state.get("lib_selected"):
