@@ -5,11 +5,7 @@ import io
 import re
 
 
-def extract_text_from_source(source_type: str, url: str = None, file=None) -> tuple[str, str]:
-    """
-    Returns (text, detected_title).
-    Raises ValueError with a user-friendly message on failure.
-    """
+def extract_text_from_source(source_type: str, url: str = None, file=None) -> tuple:
     if source_type == "youtube":
         return _extract_youtube(url)
     elif source_type == "file":
@@ -18,19 +14,38 @@ def extract_text_from_source(source_type: str, url: str = None, file=None) -> tu
         raise ValueError(f"Unknown source type: {source_type}")
 
 
-# ── YouTube ──────────────────────────────────────────────────────────────────
+def _parse_youtube_id(url: str):
+    # Handle all common YouTube URL formats
+    patterns = [
+        r'(?:v=)([a-zA-Z0-9_-]{11})',           # ?v=xxxx
+        r'(?:youtu\.be\/)([a-zA-Z0-9_-]{11})',   # youtu.be/xxxx
+        r'(?:embed\/)([a-zA-Z0-9_-]{11})',        # /embed/xxxx
+        r'(?:shorts\/)([a-zA-Z0-9_-]{11})',       # /shorts/xxxx
+        r'(?:live\/)([a-zA-Z0-9_-]{11})',         # /live/xxxx
+        r'^([a-zA-Z0-9_-]{11})$',                 # bare ID
+    ]
+    url = url.strip()
+    for p in patterns:
+        m = re.search(p, url)
+        if m:
+            return m.group(1)
+    return None
 
-def _extract_youtube(url: str) -> tuple[str, str]:
+
+def _extract_youtube(url: str) -> tuple:
     from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound, TranscriptsDisabled
 
     video_id = _parse_youtube_id(url)
     if not video_id:
-        raise ValueError("Couldn't parse a YouTube video ID from that URL. Make sure it's a valid YouTube link.")
+        raise ValueError(
+            f"Couldn't find a YouTube video ID in that URL.\n\n"
+            f"URL received: `{url}`\n\n"
+            f"Try copying the URL directly from your browser address bar."
+        )
 
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
 
-        # Prefer manual English, fall back to auto-generated, then any language
         transcript = None
         try:
             transcript = transcript_list.find_manually_created_transcript(["en", "en-US", "en-GB"])
@@ -44,56 +59,38 @@ def _extract_youtube(url: str) -> tuple[str, str]:
                 pass
 
         if not transcript:
-            # Take the first available transcript
             for t in transcript_list:
                 transcript = t
                 break
 
         if not transcript:
-            raise ValueError("No transcript/captions found for this video. Please paste the transcript manually instead.")
+            raise ValueError("No captions found. Please paste the transcript manually.")
 
         entries = transcript.fetch()
         text = " ".join(entry["text"] for entry in entries)
-        text = re.sub(r"\[.*?\]", "", text)  # remove [Music], [Applause] etc.
+        text = re.sub(r"\[.*?\]", "", text)
         text = re.sub(r"\s+", " ", text).strip()
 
-        return text, ""  # title detection would need yt-dlp; skip for simplicity
+        return text, ""
 
     except (NoTranscriptFound, TranscriptsDisabled):
-        raise ValueError("This video has no captions or transcripts available. Please paste the transcript manually instead.")
+        raise ValueError("This video has no captions. Please paste the transcript manually instead.")
     except ValueError:
         raise
     except Exception as e:
         raise ValueError(f"Failed to fetch transcript: {str(e)}")
 
 
-def _parse_youtube_id(url: str) -> str | None:
-    patterns = [
-        r"(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})",
-    ]
-    for p in patterns:
-        m = re.search(p, url)
-        if m:
-            return m.group(1)
-    return None
-
-
-# ── File uploads ─────────────────────────────────────────────────────────────
-
-def _extract_file(file) -> tuple[str, str]:
+def _extract_file(file) -> tuple:
     name = file.name.lower()
-
     if name.endswith(".txt"):
         return _extract_txt(file), file.name
-
     elif name.endswith(".pdf"):
         return _extract_pdf(file), file.name
-
     elif name.endswith(".pptx"):
         return _extract_pptx(file), file.name
-
     else:
-        raise ValueError(f"Unsupported file type: {file.name}. Please upload a PDF, PPTX, or TXT file.")
+        raise ValueError(f"Unsupported file type. Please upload PDF, PPTX, or TXT.")
 
 
 def _extract_txt(file) -> str:
