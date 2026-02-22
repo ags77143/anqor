@@ -16,6 +16,7 @@ st.markdown("""
 *, *::before, *::after { box-sizing: border-box; }
 html, body, .stApp { background-color: #f5f0e8 !important; color: #2c2416 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; }
 #MainMenu, footer, header { visibility: hidden; }
+[data-testid="collapsedControl"] { display: flex !important; visibility: visible !important; background: #c17b2e !important; border-radius: 0 6px 6px 0 !important; }
 .block-container { padding-top: 1.5rem !important; max-width: 1000px !important; }
 
 /* Sidebar */
