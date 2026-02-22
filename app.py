@@ -122,7 +122,7 @@ div[data-baseweb="select"] * { color: #2c2416 !important; font-family: 'Plus Jak
 
 from auth import show_auth_page, get_supabase_client, get_current_user
 from processor import extract_text_from_source
-from ai_generator import generate_study_materials, get_groq_client
+from ai_generator import generate_study_materials, generate_quiz, generate_flashcards, get_groq_client
 from db import (save_lecture, save_materials, get_user_lectures, get_lecture_materials,
                 delete_lecture, get_user_subjects, create_subject, delete_subject, update_lecture_subject)
 
@@ -138,7 +138,7 @@ for k, v in [("page", "new"), ("selected_subject", None), ("lib_selected", None)
         st.session_state[k] = v
 
 # ── Materials renderer ────────────────────────────────────────────────────────
-def show_materials(materials, prefix):
+def show_materials(materials, prefix, lecture_id=None):
     tab1, tab2, tab3, tab4, tab5 = st.tabs(["📝 Notes", "📖 Glossary", "❓ Quiz", "🃏 Flashcards", "🎯 Exam Topics"])
 
     with tab1:
@@ -152,25 +152,57 @@ def show_materials(materials, prefix):
 
     with tab3:
         quiz = materials.get("quiz") or []
-        qr_key = f"{prefix}_qr"
-        if qr_key not in st.session_state:
-            st.session_state[qr_key] = {}
-        for i, q in enumerate(quiz):
-            st.markdown(f'<div class="aq-card"><div class="aq-q-num">Question {i+1} of {len(quiz)}</div><div class="aq-question">{q.get("question","")}</div>', unsafe_allow_html=True)
-            for j, opt in enumerate(q.get("options", [])):
-                lbl = ["A","B","C","D"][j] if j < 4 else str(j+1)
-                st.markdown(f'<div class="aq-option"><span class="aq-option-label">{lbl}</span>{opt}</div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            revealed = st.session_state[qr_key].get(i, False)
-            if st.button(f"{'Hide' if revealed else 'Show'} Answer", key=f"{prefix}_qbtn_{i}"):
-                st.session_state[qr_key][i] = not revealed
-                st.rerun()
-            if revealed:
-                st.markdown(f'<div class="aq-answer-box">✓ <strong>{q.get("answer","")}</strong><br/><span style="color:#5a4f3c;font-size:0.8rem;">{q.get("explanation","")}</span></div>', unsafe_allow_html=True)
+        if not quiz:
+            st.markdown('<div class="aq-info">Quiz not generated yet.</div>', unsafe_allow_html=True)
+            if st.button("⚡ Generate Quiz", key=f"{prefix}_gen_quiz"):
+                with st.spinner("Generating quiz..."):
+                    try:
+                        raw_transcript = st.session_state.get("chat_context", "")
+                        quiz = generate_quiz(raw_transcript)
+                        materials["quiz"] = quiz
+                        if lecture_id:
+                            supabase.table("study_materials").update({"quiz": quiz}).eq("lecture_id", lecture_id).execute()
+                        key = "current_materials" if prefix == "new" else None
+                        if key and key in st.session_state:
+                            st.session_state[key]["quiz"] = quiz
+                        st.rerun()
+                    except Exception as e:
+                        st.markdown(f'<div class="aq-warn">⚠️ {str(e)}</div>', unsafe_allow_html=True)
+        else:
+            qr_key = f"{prefix}_qr"
+            if qr_key not in st.session_state:
+                st.session_state[qr_key] = {}
+            for i, q in enumerate(quiz):
+                st.markdown(f'<div class="aq-card"><div class="aq-q-num">Question {i+1} of {len(quiz)}</div><div class="aq-question">{q.get("question","")}</div>', unsafe_allow_html=True)
+                for j, opt in enumerate(q.get("options", [])):
+                    lbl = ["A","B","C","D"][j] if j < 4 else str(j+1)
+                    st.markdown(f'<div class="aq-option"><span class="aq-option-label">{lbl}</span>{opt}</div>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+                revealed = st.session_state[qr_key].get(i, False)
+                if st.button(f"{'Hide' if revealed else 'Show'} Answer", key=f"{prefix}_qbtn_{i}"):
+                    st.session_state[qr_key][i] = not revealed
+                    st.rerun()
+                if revealed:
+                    st.markdown(f'<div class="aq-answer-box">✓ <strong>{q.get("answer","")}</strong><br/><span style="color:#5a4f3c;font-size:0.8rem;">{q.get("explanation","")}</span></div>', unsafe_allow_html=True)
 
     with tab4:
         flashcards = materials.get("flashcards") or []
-        if flashcards:
+        if not flashcards:
+            st.markdown('<div class="aq-info">Flashcards not generated yet.</div>', unsafe_allow_html=True)
+            if st.button("⚡ Generate Flashcards", key=f"{prefix}_gen_fc"):
+                with st.spinner("Generating flashcards..."):
+                    try:
+                        raw_transcript = st.session_state.get("chat_context", "")
+                        flashcards = generate_flashcards(raw_transcript)
+                        materials["flashcards"] = flashcards
+                        if lecture_id:
+                            supabase.table("study_materials").update({"flashcards": flashcards}).eq("lecture_id", lecture_id).execute()
+                        if "current_materials" in st.session_state and prefix == "new":
+                            st.session_state["current_materials"]["flashcards"] = flashcards
+                        st.rerun()
+                    except Exception as e:
+                        st.markdown(f'<div class="aq-warn">⚠️ {str(e)}</div>', unsafe_allow_html=True)
+        else:
             idx_key = f"{prefix}_fc_idx"
             flip_key = f"{prefix}_fc_flip"
             if idx_key not in st.session_state: st.session_state[idx_key] = 0
@@ -184,7 +216,7 @@ def show_materials(materials, prefix):
                 if st.button("← Prev", key=f"{prefix}_fc_prev"):
                     st.session_state[idx_key] = max(0, idx-1); st.session_state[flip_key] = False; st.rerun()
             with c2:
-                if st.button("Flip 🔄", key=f"{prefix}_fc_flipbtn2"):
+                if st.button("Flip 🔄", key=f"{prefix}_fc_flipbtn3"):
                     st.session_state[flip_key] = not flipped; st.rerun()
             with c3:
                 if st.button("Next →", key=f"{prefix}_fc_next"):
@@ -195,7 +227,6 @@ def show_materials(materials, prefix):
             clean = topic.strip().lstrip("-•*123456789. ")
             if clean:
                 st.markdown(f'<div class="aq-exam-topic"><span class="aq-bullet">▸</span>{clean}</div>', unsafe_allow_html=True)
-
 # ── Top nav ───────────────────────────────────────────────────────────────────
 st.markdown('<div class="aq-nav">', unsafe_allow_html=True)
 nav_col1, nav_col2, nav_col3 = st.columns([2, 3, 2])
@@ -313,7 +344,7 @@ with main_col:
 
         if "current_materials" in st.session_state:
             st.markdown(f'<div class="aq-page-title">{st.session_state.get("current_title","Lecture")}</div>', unsafe_allow_html=True)
-            show_materials(st.session_state["current_materials"], prefix="new")
+            show_materials(st.session_state["current_materials"], prefix="new", lecture_id=st.session_state.get("current_lecture_id"))
 
     # ── LIBRARY ───────────────────────────────────────────────────────────────
     elif st.session_state["page"] == "lib":
@@ -378,7 +409,7 @@ with main_col:
                 if materials:
                     st.markdown("---")
                     st.markdown(f'<div class="aq-page-title">{lec_info.get("title","")}</div>', unsafe_allow_html=True)
-                    show_materials(materials, prefix=f"lib_{lec_id}")
+                    show_materials(materials, prefix=f"lib_{lec_id}", lecture_id=lec_id)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
