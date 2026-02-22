@@ -187,6 +187,20 @@ with st.sidebar:
         create_subject(supabase, user.id, new_subj.strip(), COLOURS[idx])
         st.rerun()
 
+    st.markdown('<div class="aq-section">Recent Lectures</div>', unsafe_allow_html=True)
+    all_lectures = get_user_lectures(supabase, user.id)
+    if not all_lectures:
+        st.markdown('<div style="font-size:0.78rem;color:#8c7d65;padding:0.3rem 0;">No lectures yet</div>', unsafe_allow_html=True)
+    else:
+        for lec in all_lectures[:15]:
+            src = lec.get("source_type", "")
+            icon = {"youtube": "🎬", "pdf": "📄", "pptx": "📊", "txt": "📝", "transcript": "📋"}.get(src, "📁")
+            if st.button(f"{icon} {lec['title']}", key=f"sidebar_lec_{lec['id']}", use_container_width=True):
+                st.session_state["page"] = "lib"
+                st.session_state["lib_selected"] = lec["id"]
+                st.session_state["selected_subject"] = lec.get("subject_id")
+                st.rerun()
+
     st.markdown("---")
     st.markdown(f'<div style="font-size:0.72rem;color:#8c7d65;">{user.email}</div>', unsafe_allow_html=True)
 
