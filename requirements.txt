@@ -1,9 +1,7 @@
-streamlit==1.32.0
-groq==0.5.0
-supabase==2.3.4
-gotrue==2.3.0
-httpx==0.24.1
-youtube-transcript-api==0.6.2
-python-pptx==0.6.23
-PyPDF2==3.0.1
-python-dotenv==1.0.1
+streamlit
+groq
+supabase
+youtube-transcript-api
+python-pptx
+PyPDF2
+python-dotenv
