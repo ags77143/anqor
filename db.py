@@ -67,3 +67,8 @@ def get_lecture_materials(supabase, lecture_id: str) -> dict:
 
 def delete_lecture(supabase, lecture_id: str):
     supabase.table("lectures").delete().eq("id", lecture_id).execute()
+
+
+def update_lecture_subject(supabase, lecture_id: str, subject_id):
+    supabase.table("lectures").update({"subject_id": subject_id}).eq("id", lecture_id).execute()
+
