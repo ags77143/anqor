@@ -20,59 +20,45 @@ def get_groq_client() -> Groq:
     return Groq(api_key=api_key)
 
 
-# Max characters to send to Groq (Llama 3 70B context ~8k tokens ≈ 32k chars)
-MAX_CHARS = 28_000
+MAX_CHARS = 24_000
 
 
 def generate_study_materials(text: str) -> dict:
-    """
-    Send lecture text to Groq and return structured study materials as a dict.
-    """
     client = get_groq_client()
 
-    # Truncate if needed
     if len(text) > MAX_CHARS:
-        text = text[:MAX_CHARS] + "\n\n[transcript truncated due to length]"
+        text = text[:MAX_CHARS] + "\n\n[transcript truncated]"
 
-    system_prompt = """You are an expert study assistant and university tutor. 
-Your job is to transform raw lecture content into comprehensive, high-quality study materials.
-Always respond with ONLY valid JSON — no markdown fences, no explanation, no preamble.
-Be thorough, accurate, and pedagogically excellent."""
+    system_prompt = """You are an expert study assistant. You MUST respond with valid JSON only.
+No markdown, no code fences, no explanation before or after. Just raw JSON starting with { and ending with }."""
 
-    user_prompt = f"""Analyse this lecture content and generate comprehensive study materials.
-
-LECTURE CONTENT:
-{text}
-
-Respond with this exact JSON structure (all fields required):
+    user_prompt = f"""Create study materials from this lecture content. Return ONLY a JSON object with these exact keys:
 
 {{
-  "title": "A concise descriptive title for this lecture",
-  "summary": "A 3-4 sentence TL;DR of the key message and main points",
-  "notes": "Comprehensive, well-structured markdown study notes. Use ## for main sections, ### for subsections. Include all key concepts, explanations, examples, and important details. Should be thorough enough to study from without the original. Minimum 500 words.",
+  "title": "short lecture title",
+  "summary": "3-4 sentence summary",
+  "notes": "comprehensive markdown study notes with ## headers, minimum 400 words",
   "glossary": [
-    {{"term": "Term name", "definition": "Clear, complete definition in context of this lecture"}}
+    {{"term": "word", "definition": "meaning"}}
   ],
   "quiz": [
-    {{
-      "question": "Full question text?",
-      "options": ["Option A text", "Option B text", "Option C text", "Option D text"],
-      "answer": "The correct option text (copy exactly from options)",
-      "explanation": "Why this answer is correct and others are wrong"
-    }}
+    {{"question": "question text?", "options": ["A", "B", "C", "D"], "answer": "correct option text", "explanation": "why"}}
   ],
   "flashcards": [
-    {{"front": "Term or concept", "back": "Definition or explanation"}}
+    {{"front": "term", "back": "definition"}}
   ],
-  "exam_topics": "Bullet list of the most likely exam topics, one per line, starting with -"
+  "exam_topics": "- topic one\\n- topic two\\n- topic three"
 }}
 
-Requirements:
-- glossary: 8-15 key terms
-- quiz: 10-12 questions, mix of difficulty, 4 options each, plausible distractors
-- flashcards: 15-20 cards covering all key concepts
-- exam_topics: 8-12 high-priority topics
-- notes: must be genuinely comprehensive — a student should be able to study this alone"""
+Rules:
+- glossary: 8-12 terms
+- quiz: 8-10 questions with 4 options each
+- flashcards: 12-15 cards
+- exam_topics: 6-10 topics, each on new line starting with -
+- Return ONLY the JSON, nothing else
+
+LECTURE CONTENT:
+{text}"""
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -80,27 +66,39 @@ Requirements:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        temperature=0.3,
+        temperature=0.1,
         max_tokens=4096,
     )
 
     raw = response.choices[0].message.content.strip()
 
-    # Strip any accidental markdown fences
-    raw = re.sub(r"^```(?:json)?\s*", "", raw)
-    raw = re.sub(r"\s*```$", "", raw)
+    # Strip markdown fences if present
+    raw = re.sub(r'^```(?:json)?\s*', '', raw)
+    raw = re.sub(r'\s*```$', '', raw)
+    raw = raw.strip()
 
+    # Try direct parse
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
-        # Try to salvage partial JSON
-        try:
-            # Find the first { and last }
-            start = raw.index("{")
-            end = raw.rindex("}") + 1
-            return json.loads(raw[start:end])
-        except Exception:
-            raise ValueError(
-                "AI returned malformed JSON. This can happen with very short inputs. "
-                "Try adding more content or re-running."
-            )
+        pass
+
+    # Try to find JSON object within the response
+    try:
+        start = raw.index('{')
+        end = raw.rindex('}') + 1
+        return json.loads(raw[start:end])
+    except Exception:
+        pass
+
+    # Last resort: fix common issues and try again
+    try:
+        # Remove any text before first {
+        cleaned = raw[raw.index('{'):]
+        # Remove any text after last }
+        cleaned = cleaned[:cleaned.rindex('}')+1]
+        # Fix unescaped newlines inside strings
+        cleaned = re.sub(r'(?<!\\)\n(?!["\s]*[,}\]])', ' ', cleaned)
+        return json.loads(cleaned)
+    except Exception:
+        raise ValueError("AI returned malformed JSON. Try re-running — it usually works on the second attempt.")
