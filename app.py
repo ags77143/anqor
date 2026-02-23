@@ -139,7 +139,7 @@ for k, v in [("page", "new"), ("selected_subject", None), ("lib_selected", None)
 
 # ── Materials renderer ────────────────────────────────────────────────────────
 def show_materials(materials, prefix, lecture_id=None):
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📝 Notes", "📖 Glossary", "❓ Quiz", "🃏 Flashcards", "🎯 Exam Topics"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📝 Notes", "📖 Glossary", "❓ Quiz", "🃏 Flashcards"])
 
     with tab1:
         if materials.get("summary"):
@@ -222,11 +222,6 @@ def show_materials(materials, prefix, lecture_id=None):
                 if st.button("Next →", key=f"{prefix}_fc_next"):
                     st.session_state[idx_key] = min(len(flashcards)-1, idx+1); st.session_state[flip_key] = False; st.rerun()
 
-    with tab5:
-        for topic in (materials.get("exam_topics") or "").split("\n"):
-            clean = topic.strip().lstrip("-•*123456789. ")
-            if clean:
-                st.markdown(f'<div class="aq-exam-topic"><span class="aq-bullet">▸</span>{clean}</div>', unsafe_allow_html=True)
 # ── Top nav ───────────────────────────────────────────────────────────────────
 st.markdown('<div class="aq-nav">', unsafe_allow_html=True)
 nav_col1, nav_col2, nav_col3 = st.columns([2, 3, 2])
