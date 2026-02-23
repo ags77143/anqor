@@ -1,6 +1,5 @@
 """
-ai_generator.py — Generate study materials using Groq.
-Notes + glossary generated upfront. Quiz and flashcards on demand.
+ai_generator.py — Focused generation. Notes+glossary upfront, quiz+flashcards on demand.
 """
 import os
 import json
@@ -21,156 +20,149 @@ def get_groq_client() -> Groq:
     return Groq(api_key=api_key)
 
 
-MAX_CHARS = 24_000
+MAX_CHARS = 20_000
 
 
-def _parse_json(raw: str) -> dict:
-    raw = re.sub(r'^```(?:json)?\s*', '', raw.strip())
+def _call(client, prompt, max_tokens=4096):
+    system = "You are an elite university tutor. Respond with valid JSON only. No markdown fences, no explanation. Raw JSON starting with { or [ only."
+    r = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[{"role": "system", "content": system}, {"role": "user", "content": prompt}],
+        temperature=0.2,
+        max_tokens=max_tokens,
+    )
+    return r.choices[0].message.content.strip()
+
+
+def _parse_obj(raw: str) -> dict:
+    raw = re.sub(r'^```(?:json)?\s*', '', raw)
     raw = re.sub(r'\s*```$', '', raw).strip()
-    try:
-        return json.loads(raw)
-    except Exception:
-        pass
-    try:
-        start = raw.index('{')
-        end = raw.rindex('}') + 1
-        return json.loads(raw[start:end])
-    except Exception:
-        pass
-    try:
-        cleaned = raw[raw.index('{'):]
-        cleaned = cleaned[:cleaned.rindex('}')+1]
-        cleaned = re.sub(r'(?<!\\)\n(?!["\\s]*[,}\\]])', ' ', cleaned)
-        return json.loads(cleaned)
-    except Exception:
-        raise ValueError("Malformed JSON from AI. Try re-running.")
+    for attempt in [raw, raw[raw.find('{'):raw.rfind('}')+1] if '{' in raw else '']:
+        try:
+            return json.loads(attempt)
+        except Exception:
+            pass
+    raise ValueError("Malformed JSON. Try re-running.")
+
+
+def _parse_list(raw: str) -> list:
+    raw = re.sub(r'^```(?:json)?\s*', '', raw)
+    raw = re.sub(r'\s*```$', '', raw).strip()
+    for attempt in [raw, raw[raw.find('['):raw.rfind(']')+1] if '[' in raw else '']:
+        try:
+            result = json.loads(attempt)
+            return result if isinstance(result, list) else []
+        except Exception:
+            pass
+    raise ValueError("Malformed JSON. Try re-running.")
 
 
 def generate_study_materials(text: str) -> dict:
-    """Generate notes, summary, glossary and exam topics only."""
+    """
+    Call 1: Comprehensive notes + summary
+    Call 2: Detailed glossary
+    Both get full 4096 token budgets.
+    """
     client = get_groq_client()
-
     if len(text) > MAX_CHARS:
-        text = text[:MAX_CHARS] + "\n\n[transcript truncated]"
+        text = text[:MAX_CHARS] + "\n\n[truncated]"
 
-    system = """You are an elite university tutor. Respond with valid JSON only — no markdown fences, no preamble. Raw JSON starting with { only."""
-
-    prompt = f"""From this lecture, return a JSON object with ONLY these keys:
+    # ── Call 1: Notes + summary ───────────────────────────────────────────────
+    p1 = f"""From this lecture produce a JSON object with these keys:
 
 {{
-  "title": "descriptive title for this lecture",
-  "summary": "6-8 sentence summary covering all main themes, arguments, and conclusions",
-  "notes": "EXTREMELY COMPREHENSIVE markdown study notes. Use ## for main sections, ### for subsections. Cover EVERY concept, definition, theory, example, formula, and detail. Explain clearly as if teaching from scratch. Include background context, all key concepts in depth, worked examples, relationships between ideas, real-world applications, common exam traps, and a summary at the end. MINIMUM 1000 words.",
-  "glossary": [
-    {{"term": "term", "definition": "thorough definition with context and significance — not just a one-liner"}}
-  ],
-  "exam_topics": "- topic one\\n- topic two\\n- topic three"
+  "title": "specific descriptive title",
+  "summary": "7-9 sentence executive summary covering every major theme, argument, finding and conclusion. Be specific, not vague.",
+  "notes": "Write deeply comprehensive markdown study notes a student could use to ace an exam without reading anything else. Structure with ## main sections and ### subsections. For each concept: define it precisely, explain how it works, give examples, explain why it matters, connect it to other concepts. Include: all terminology, any formulas or frameworks, step-by-step processes, comparisons between concepts, edge cases, real-world applications. End with a ## Key Takeaways section. MINIMUM 1200 words. Do not summarise — teach."
 }}
-
-Rules:
-- notes: minimum 1000 words, comprehensive, do not skip anything
-- glossary: 14-18 key terms with detailed definitions
-- exam_topics: 10-14 specific high-priority topics
-- Return ONLY the JSON
 
 LECTURE:
 {text}"""
 
-    r = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "system", "content": system}, {"role": "user", "content": prompt}],
-        temperature=0.2,
-        max_tokens=4096,
-    )
-    result = _parse_json(r.choices[0].message.content)
-    # Ensure quiz and flashcards are empty so UI shows generate buttons
-    result.setdefault("quiz", [])
-    result.setdefault("flashcards", [])
-    return result
+    r1 = _parse_obj(_call(client, p1, max_tokens=4096))
+
+    # ── Call 2: Glossary ──────────────────────────────────────────────────────
+    p2 = f"""From this lecture produce a JSON object with one key:
+
+{{
+  "glossary": [
+    {{
+      "term": "exact term as used in the lecture",
+      "definition": "Write 3-5 sentences: what it means precisely, where it comes from or why it exists, how it relates to other concepts in this lecture, and when/how it is applied. Be thorough."
+    }}
+  ]
+}}
+
+Include 15-20 terms. Cover every important concept, technique, person, theory, or framework mentioned.
+
+LECTURE:
+{text}"""
+
+    r2 = _parse_obj(_call(client, p2, max_tokens=4096))
+
+    return {
+        "title": r1.get("title", "Untitled Lecture"),
+        "summary": r1.get("summary", ""),
+        "notes": r1.get("notes", ""),
+        "glossary": r2.get("glossary", []),
+        "quiz": [],
+        "flashcards": [],
+    }
 
 
 def generate_quiz(text: str) -> list:
-    """Generate quiz questions on demand."""
+    """Dedicated call for quiz — full token budget."""
     client = get_groq_client()
     if len(text) > MAX_CHARS:
         text = text[:MAX_CHARS]
 
-    system = "You are an expert tutor. Respond with valid JSON only — raw JSON array, no fences."
-
-    prompt = f"""Create a quiz from this lecture. Return ONLY a JSON array:
+    prompt = f"""From this lecture create a challenging and comprehensive quiz. Return a JSON array:
 
 [
-  {{"question": "full question?", "options": ["option A", "option B", "option C", "option D"], "answer": "exact correct option text", "explanation": "why this is correct and others are wrong"}}
+  {{
+    "question": "Clear, specific question testing real understanding (not just memorisation)",
+    "options": ["Plausible option A", "Plausible option B", "Plausible option C", "Plausible option D"],
+    "answer": "Exact text of correct option",
+    "explanation": "2-3 sentences: why this answer is correct, why each wrong option is wrong, and what the underlying concept is."
+  }}
 ]
 
-Rules:
-- 14-16 questions
-- Mix of easy, medium, hard
-- All 4 options must be plausible
-- Detailed explanations
+Requirements:
+- 15-18 questions
+- Cover all major topics from the lecture
+- Mix: 30% recall, 40% understanding, 30% application/analysis
+- All 4 options must be genuinely plausible — no obviously wrong options
+- Questions should range from straightforward to challenging
 
 LECTURE:
 {text}"""
 
-    r = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "system", "content": system}, {"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=4096,
-    )
-    raw = r.choices[0].message.content.strip()
-    raw = re.sub(r'^```(?:json)?\s*', '', raw)
-    raw = re.sub(r'\s*```$', '', raw).strip()
-    try:
-        result = json.loads(raw)
-        return result if isinstance(result, list) else result.get("quiz", [])
-    except Exception:
-        try:
-            start = raw.index('[')
-            end = raw.rindex(']') + 1
-            return json.loads(raw[start:end])
-        except Exception:
-            raise ValueError("Failed to generate quiz. Try again.")
+    return _parse_list(_call(client, prompt, max_tokens=4096))
 
 
 def generate_flashcards(text: str) -> list:
-    """Generate flashcards on demand."""
+    """Dedicated call for flashcards — full token budget."""
     client = get_groq_client()
     if len(text) > MAX_CHARS:
         text = text[:MAX_CHARS]
 
-    system = "You are an expert tutor. Respond with valid JSON only — raw JSON array, no fences."
-
-    prompt = f"""Create flashcards from this lecture. Return ONLY a JSON array:
+    prompt = f"""From this lecture create comprehensive flashcards for active recall studying. Return a JSON array:
 
 [
-  {{"front": "term or concept", "back": "thorough explanation, minimum 2 sentences"}}
+  {{
+    "front": "A specific question or prompt (not just a term — phrase it as something to actively recall)",
+    "back": "Complete answer in 2-4 sentences. Include the definition, context, significance, and a memory hook or example where helpful."
+  }}
 ]
 
-Rules:
-- 20-25 flashcards
-- Cover every important concept
-- Backs should be genuinely useful, not just a one-liner
+Requirements:
+- 22-28 flashcards
+- Cover every important concept, definition, process, and relationship
+- Front should be a question or prompt, not just a word
+- Back should be genuinely useful, not a one-liner
+- Include cards for: key terms, processes, comparisons, applications, common mistakes
 
 LECTURE:
 {text}"""
 
-    r = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "system", "content": system}, {"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=4096,
-    )
-    raw = r.choices[0].message.content.strip()
-    raw = re.sub(r'^```(?:json)?\s*', '', raw)
-    raw = re.sub(r'\s*```$', '', raw).strip()
-    try:
-        result = json.loads(raw)
-        return result if isinstance(result, list) else result.get("flashcards", [])
-    except Exception:
-        try:
-            start = raw.index('[')
-            end = raw.rindex(']') + 1
-            return json.loads(raw[start:end])
-        except Exception:
-            raise ValueError("Failed to generate flashcards. Try again.")
+    return _parse_list(_call(client, prompt, max_tokens=4096))
