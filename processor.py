@@ -1,5 +1,5 @@
 """
-processor.py — Extract raw text from YouTube URLs, PDFs, PPTXs, and TXT files.
+processor.py — Extract text from YouTube, PDFs, PPTXs, TXT files.
 """
 import io
 import re
@@ -15,16 +15,15 @@ def extract_text_from_source(source_type: str, url: str = None, file=None) -> tu
 
 
 def _parse_youtube_id(url: str):
-    # Handle all common YouTube URL formats
-    patterns = [
-        r'(?:v=)([a-zA-Z0-9_-]{11})',           # ?v=xxxx
-        r'(?:youtu\.be\/)([a-zA-Z0-9_-]{11})',   # youtu.be/xxxx
-        r'(?:embed\/)([a-zA-Z0-9_-]{11})',        # /embed/xxxx
-        r'(?:shorts\/)([a-zA-Z0-9_-]{11})',       # /shorts/xxxx
-        r'(?:live\/)([a-zA-Z0-9_-]{11})',         # /live/xxxx
-        r'^([a-zA-Z0-9_-]{11})$',                 # bare ID
-    ]
     url = url.strip()
+    patterns = [
+        r'(?:v=)([a-zA-Z0-9_-]{11})',
+        r'(?:youtu\.be\/)([a-zA-Z0-9_-]{11})',
+        r'(?:embed\/)([a-zA-Z0-9_-]{11})',
+        r'(?:shorts\/)([a-zA-Z0-9_-]{11})',
+        r'(?:live\/)([a-zA-Z0-9_-]{11})',
+        r'^([a-zA-Z0-9_-]{11})$',
+    ]
     for p in patterns:
         m = re.search(p, url)
         if m:
@@ -37,48 +36,83 @@ def _extract_youtube(url: str) -> tuple:
 
     video_id = _parse_youtube_id(url)
     if not video_id:
-        raise ValueError(
-            f"Couldn't find a YouTube video ID in that URL.\n\n"
-            f"URL received: `{url}`\n\n"
-            f"Try copying the URL directly from your browser address bar."
-        )
+        raise ValueError(f"Couldn't find a YouTube video ID in: {url}\nTry copying the URL directly from your browser.")
 
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+    except TranscriptsDisabled:
+        raise ValueError(
+            "This video has transcripts disabled by the uploader.\n\n"
+            "**Workarounds:**\n"
+            "- Go to [tactiq.io](https://tactiq.io) or [downsub.com](https://downsub.com), paste the YouTube URL, download the transcript as .txt, then upload it here\n"
+            "- Or paste the transcript text directly using the 'Paste Transcript' option"
+        )
+    except Exception as e:
+        raise ValueError(
+            f"Couldn't access this video's transcripts.\n\n"
+            "**Workarounds:**\n"
+            "- Try [tactiq.io](https://tactiq.io) or [downsub.com](https://downsub.com) to get a transcript\n"
+            "- Or paste the transcript directly\n\n"
+            f"Technical error: {str(e)}"
+        )
 
-        transcript = None
+    # Try every possible transcript — manual first, then generated, then any language
+    transcript = None
+    errors = []
+
+    # 1. Manual English
+    try:
+        transcript = transcript_list.find_manually_created_transcript(["en", "en-US", "en-GB", "en-AU"])
+    except Exception as e:
+        errors.append(f"manual EN: {e}")
+
+    # 2. Auto-generated English
+    if not transcript:
         try:
-            transcript = transcript_list.find_manually_created_transcript(["en", "en-US", "en-GB"])
-        except Exception:
-            pass
+            transcript = transcript_list.find_generated_transcript(["en", "en-US", "en-GB", "en-AU"])
+        except Exception as e:
+            errors.append(f"auto EN: {e}")
 
-        if not transcript:
-            try:
-                transcript = transcript_list.find_generated_transcript(["en", "en-US", "en-GB"])
-            except Exception:
-                pass
+    # 3. Any manual transcript (any language)
+    if not transcript:
+        try:
+            for t in transcript_list:
+                if not t.is_generated:
+                    transcript = t
+                    break
+        except Exception as e:
+            errors.append(f"any manual: {e}")
 
-        if not transcript:
+    # 4. Any transcript at all
+    if not transcript:
+        try:
             for t in transcript_list:
                 transcript = t
                 break
+        except Exception as e:
+            errors.append(f"any: {e}")
 
-        if not transcript:
-            raise ValueError("No captions found. Please paste the transcript manually.")
+    if not transcript:
+        raise ValueError(
+            "Found the video but couldn't retrieve any transcript.\n\n"
+            "**Workarounds:**\n"
+            "- Use [tactiq.io](https://tactiq.io) — paste the YouTube URL and it exports the transcript\n"
+            "- Use [downsub.com](https://downsub.com) to download subtitles as .txt then upload here\n"
+            "- Switch to 'Paste Transcript' and paste it manually"
+        )
 
+    try:
         entries = transcript.fetch()
         text = " ".join(entry["text"] for entry in entries)
-        text = re.sub(r"\[.*?\]", "", text)
+        text = re.sub(r"\[.*?\]", "", text)  # remove [Music] etc
         text = re.sub(r"\s+", " ", text).strip()
-
+        if len(text) < 100:
+            raise ValueError("Transcript was found but appears to be empty or too short.")
         return text, ""
-
-    except (NoTranscriptFound, TranscriptsDisabled):
-        raise ValueError("This video has no captions. Please paste the transcript manually instead.")
     except ValueError:
         raise
     except Exception as e:
-        raise ValueError(f"Failed to fetch transcript: {str(e)}")
+        raise ValueError(f"Failed to read transcript: {str(e)}")
 
 
 def _extract_file(file) -> tuple:
@@ -105,11 +139,7 @@ def _extract_pdf(file) -> str:
     try:
         import PyPDF2
         reader = PyPDF2.PdfReader(io.BytesIO(file.read()))
-        pages = []
-        for page in reader.pages:
-            text = page.extract_text()
-            if text:
-                pages.append(text)
+        pages = [page.extract_text() for page in reader.pages if page.extract_text()]
         return "\n\n".join(pages)
     except Exception as e:
         raise ValueError(f"Failed to read PDF: {str(e)}")
@@ -119,14 +149,11 @@ def _extract_pptx(file) -> str:
     try:
         from pptx import Presentation
         prs = Presentation(io.BytesIO(file.read()))
-        slides_text = []
+        slides = []
         for i, slide in enumerate(prs.slides):
-            parts = []
-            for shape in slide.shapes:
-                if hasattr(shape, "text") and shape.text.strip():
-                    parts.append(shape.text.strip())
+            parts = [shape.text.strip() for shape in slide.shapes if hasattr(shape, "text") and shape.text.strip()]
             if parts:
-                slides_text.append(f"[Slide {i+1}]\n" + "\n".join(parts))
-        return "\n\n".join(slides_text)
+                slides.append(f"[Slide {i+1}]\n" + "\n".join(parts))
+        return "\n\n".join(slides)
     except Exception as e:
         raise ValueError(f"Failed to read PPTX: {str(e)}")
